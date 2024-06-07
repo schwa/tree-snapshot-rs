@@ -110,9 +110,6 @@ pub fn xattr_records(path: &Path) -> Result<Vec<Record>> {
     let mut records: Vec<Record> = Vec::new();
     for xattr in xattrs {
         let value = xattr::get(path, &xattr)?.unwrap_or_else(Vec::<u8>::new);
-
-        // let hash = value.map(|value| );
-        // let size = value.map(|value| value.len() as u64);
         let record = Record {
             path: path.to_string_lossy().to_string(),
             xattr: Some(xattr.into_string().unwrap()), // TODO: Unwrap
