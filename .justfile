@@ -10,7 +10,7 @@ install-local:
     cargo install --path .
 
 demo:
-    vhs script/demo.sh
+    vhs scripts/demo.tape
 
 lint-fix:
     cargo fmt

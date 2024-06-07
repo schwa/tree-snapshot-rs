@@ -9,6 +9,7 @@ use walkdir::WalkDir;
 use indicatif::ProgressBar;
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
+use std::time::Instant;
 
 mod support;
 use support::*;
@@ -36,6 +37,8 @@ impl TreeSnapshot {
     }
 
     fn main(&self) {
+        let start = Instant::now();
+
         let worker_count = usize::from(std::thread::available_parallelism().unwrap());
         info!("Number of workers: {}", worker_count);
         let pool: ThreadPool = ThreadPool::new(worker_count);
@@ -49,8 +52,11 @@ impl TreeSnapshot {
         }
         let records = rx.iter().collect::<Vec<Record>>();
         self.progress.finish_and_clear();
-        print_result(&self.args, &records, &self.progress);
-        export_records(records, &self.args);
+
+        export_records(&records, &self.args);
+        let elapsed = start.elapsed();
+
+        print_result(&self.args, &records, &self.progress, elapsed);
     }
 
     fn walk(&self, pool: &ThreadPool, tx: &Sender<Record>) {
