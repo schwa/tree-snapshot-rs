@@ -3,3 +3,5 @@ install-dist-deps:
 
 dist-check:
     cargo machete
+    cargo publish --dry-run
+    cargo package --list
