@@ -2,10 +2,11 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use clap::Parser;
-use crypto_hash::{Algorithm, Hasher};
 use crypto_hash::hex_digest;
+use crypto_hash::{Algorithm, Hasher};
 use fern::colors::{Color, ColoredLevelConfig};
 use humansize::{format_size, DECIMAL};
+use humantime::format_duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{info, warn};
 use memmap::MmapOptions;
@@ -17,10 +18,9 @@ use std::fs::{File, Metadata};
 use std::io::Write;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
-use std::time::{Duration,SystemTime};
+use std::time::{Duration, SystemTime};
 use users::{get_group_by_gid, get_user_by_uid};
 use walkdir::DirEntry;
-use humantime::format_duration;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Record {
@@ -227,7 +227,13 @@ pub fn export_records(records: &Vec<Record>, args: &Args) {
     let mut records = records.clone();
 
     // Make all paths relative to the source path
-    let root = args.source_path.normalize().unwrap().into_path_buf().to_string_lossy().into_owned();
+    let root = args
+        .source_path
+        .normalize()
+        .unwrap()
+        .into_path_buf()
+        .to_string_lossy()
+        .into_owned();
     records = records
         .iter()
         .map(|record| {
@@ -309,7 +315,7 @@ pub fn print_result(args: &Args, records: &[Record], progress: &ProgressBar, ela
             records
                 .len()
                 .to_formatted_string(&SystemLocale::default().unwrap()),
-                format_duration(elapsed).to_string()
+            format_duration(elapsed).to_string()
         );
     }
 }
