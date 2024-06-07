@@ -1,6 +1,7 @@
 //use jwalk::WalkDir;
+use normpath::PathExt;
 use anyhow::Result;
-use chrono::{DateTime, Utc};
+use chrono::{format, DateTime, Utc};
 use clap::Parser;
 use crypto_hash::hex_digest;
 use crypto_hash::{Algorithm, Hasher};
@@ -223,8 +224,31 @@ pub fn make_progress(args: &Args) -> ProgressBar {
 
 pub fn export_records(records: Vec<Record>, args: &Args) {
     let mut records = records.clone();
-    records.sort_by(|a, b| a.path.cmp(&b.path));
-    // TODO: Make all records relative to root
+
+    // Make all paths relative to the source path
+    let root = args.source_path.normalize().unwrap().into_path_buf().to_string_lossy().into_owned();
+    records = records
+        .iter()
+        .map(|record| {
+            let mut record = record.clone();
+            let relative_path = record
+                .path
+                .strip_prefix(&root)
+                .unwrap_or_else(|| record.path.as_ref())
+                .to_string();
+            record.path = format!(".{}", relative_path);
+            record
+        })
+        .collect();
+
+    // Sort by path, then xattr
+    records.sort_by(|a, b| {
+        if a.path == b.path {
+            a.xattr.cmp(&b.xattr)
+        } else {
+            a.path.cmp(&b.path)
+        }
+    });
 
     if args.output_path == PathBuf::from("-") {
         match args.format {
@@ -268,7 +292,7 @@ pub fn export_records(records: Vec<Record>, args: &Args) {
     };
 }
 
-pub fn print_result(args: &Args, records: &Vec<Record>, progress: &ProgressBar) {
+pub fn print_result(args: &Args, records: &[Record], progress: &ProgressBar) {
     if !args.skip_hashes {
         info!(
             "Scanned {} entries, {}.",
