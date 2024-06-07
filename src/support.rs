@@ -19,7 +19,7 @@ use std::io::Write;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
-use users::{get_group_by_gid, get_user_by_uid};
+use uzers::{get_group_by_gid, get_user_by_uid};
 use walkdir::DirEntry;
 
 #[derive(Serialize, Debug, Clone)]

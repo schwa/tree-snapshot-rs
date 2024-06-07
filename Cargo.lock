@@ -870,7 +870,7 @@ dependencies = [
  "serde",
  "serde_json",
  "threadpool",
- "users",
+ "uzers",
  "walkdir",
  "xattr",
 ]
@@ -888,20 +888,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0336d538f7abc86d282a4189614dfaa90810dfc2c6f6427eaf88e16311dd225d"
 
 [[package]]
-name = "users"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24cc0f6d6f267b73e5a2cadf007ba8f9bc39c6a6f9666f8cf25ea809a153b032"
-dependencies = [
- "libc",
- "log",
-]
-
-[[package]]
 name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
+
+[[package]]
+name = "uzers"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d85875e16d59b3b1549efce83ff8251a64923b03bef94add0a1862847448de4"
+dependencies = [
+ "libc",
+ "log",
+]
 
 [[package]]
 name = "vcpkg"
