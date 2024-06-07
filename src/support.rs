@@ -47,6 +47,18 @@ pub enum RecordType {
     XAttr,
 }
 
+fn user_name(uid: u32) -> String {
+    get_user_by_uid(uid)
+        .map(|user| user.name().to_string_lossy().to_string())
+        .unwrap_or_else(|| uid.to_string())
+}
+
+fn group_name(gid: u32) -> String {
+    get_group_by_gid(gid)
+        .map(|group| group.name().to_string_lossy().to_string())
+        .unwrap_or_else(|| gid.to_string())
+}
+
 pub fn record(
     path: &std::path::Path,
     metadata: &Metadata,
@@ -73,10 +85,8 @@ pub fn record(
         hash: None,
         owner_id: Some(metadata.uid()),
         group_id: Some(metadata.gid()),
-        owner_name: get_user_by_uid(metadata.uid())
-            .map(|user| user.name().to_string_lossy().to_string()),
-        group_name: get_group_by_gid(metadata.gid())
-            .map(|user| user.name().to_string_lossy().to_string()),
+        owner_name: Some(user_name(metadata.uid())),
+        group_name: Some(group_name(metadata.uid())),
     };
     if !args.skip_hashes && path.is_file() && metadata.len() > 0 {
         if metadata.len() > 1024 * 1024 * 1024 && args.verbose {
