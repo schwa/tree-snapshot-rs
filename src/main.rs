@@ -8,7 +8,7 @@ use walkdir::WalkDir;
 //use jwalk::WalkDir;
 use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::{Receiver, Sender};
 
 mod support;
 use support::*;
@@ -20,7 +20,6 @@ fn main() {
 
     let snapshot = TreeSnapshot::new(&args);
     snapshot.main();
-
 }
 
 #[derive(Clone)]
@@ -39,15 +38,14 @@ impl TreeSnapshot {
     }
 
     fn main(&self) {
-
         let worker_count = usize::from(std::thread::available_parallelism().unwrap());
         info!("Number of workers: {}", worker_count);
 
         let pool: ThreadPool = ThreadPool::new(worker_count);
         let (tx, rx) = channel();
 
-//
-        self.walk(&pool,&tx);
+        //
+        self.walk(&pool, &tx);
 
         drop(tx);
 
@@ -62,7 +60,6 @@ impl TreeSnapshot {
         print_result(&self.args, &records, &self.progress);
 
         export_records(records, &self.args);
-
     }
 
     fn walk(&self, pool: &ThreadPool, tx: &Sender<Record>) {
@@ -81,7 +78,6 @@ impl TreeSnapshot {
                     metadata.len()
                 });
 
-
                 let copy = self.clone();
                 let path = path.to_owned();
                 let tx = tx.clone();
@@ -99,22 +95,22 @@ impl TreeSnapshot {
     }
 
     fn process_file(&self, path: PathBuf, metadata: std::fs::Metadata, tx: Sender<Record>) {
-            self.progress.set_message(format!("Processing: {}", path.display()));
-            let record = record(&path, &metadata, &self.args, &self.progress);
-            if self.args.skip_hashes {
-                self.progress.inc(1);
-            }
-            let Ok(record) = record else {
-                self.progress.suspend(|| {
-                    error!("{} Error: {:?}", path.display(), record.err().unwrap());
-                });
-                return;
-            };
+        self.progress
+            .set_message(format!("Processing: {}", path.display()));
+        let record = record(&path, &metadata, &self.args, &self.progress);
+        if self.args.skip_hashes {
+            self.progress.inc(1);
+        }
+        let Ok(record) = record else {
+            self.progress.suspend(|| {
+                error!("{} Error: {:?}", path.display(), record.err().unwrap());
+            });
+            return;
+        };
+        tx.send(record).unwrap();
+        let xattr_records = xattr_records(&path);
+        for record in xattr_records {
             tx.send(record).unwrap();
-            let xattr_records = xattr_records(&path);
-            for record in xattr_records {
-                tx.send(record).unwrap();
-            }
-
+        }
     }
 }

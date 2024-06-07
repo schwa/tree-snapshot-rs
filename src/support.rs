@@ -127,7 +127,7 @@ pub fn xattr_records(path: &Path) -> Vec<Record> {
 pub struct Args {
     pub source_path: PathBuf,
 
-    #[clap(short, long="output", default_value = "-")]
+    #[clap(short, long = "output", default_value = "-")]
     pub output_path: PathBuf,
 
     #[clap(short, long)]
