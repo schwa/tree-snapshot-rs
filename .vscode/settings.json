@@ -1,10 +1,4 @@
 {
-    "cSpell.words": [
-        "chrono",
-        "humantime",
-        "jwalk",
-        "shellexpand",
-        "threadpool",
-        "walkdir"
-    ]
+    "cSpell.enabled": false
+
 }
