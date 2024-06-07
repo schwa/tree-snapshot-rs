@@ -93,19 +93,17 @@ pub fn record(
     Ok(record)
 }
 
-pub fn xattr_records(path: &Path) -> Vec<Record> {
-    let xattrs = xattr::list(path).unwrap();
+pub fn xattr_records(path: &Path) -> Result<Vec<Record>> {
+    let xattrs = xattr::list(path)?;
     let mut records: Vec<Record> = Vec::new();
     for xattr in xattrs {
-        let value = xattr::get(path, &xattr)
-            .unwrap()
-            .unwrap_or_else(Vec::<u8>::new);
+        let value = xattr::get(path, &xattr)?.unwrap_or_else(Vec::<u8>::new);
 
         // let hash = value.map(|value| );
         // let size = value.map(|value| value.len() as u64);
         let record = Record {
             path: path.to_string_lossy().to_string(),
-            xattr: Some(xattr.into_string().unwrap()),
+            xattr: Some(xattr.into_string().unwrap()), // TODO: Unwrap
             record_type: RecordType::XAttr,
             size: Some(value.len() as u64),
             modified: None,
@@ -119,7 +117,7 @@ pub fn xattr_records(path: &Path) -> Vec<Record> {
         };
         records.push(record);
     }
-    records
+    Ok(records)
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -214,10 +212,10 @@ pub fn make_progress(args: &Args) -> ProgressBar {
 
     progress.set_style(
         if args.skip_hashes {
-            ProgressStyle::with_template("{spinner:.yellow} {human_pos:10.green.bold} {human_len:10.magenta.bold} {per_sec:12.cyan.bold} {wide_msg}").unwrap()
+            ProgressStyle::with_template("{spinner:.yellow} {human_pos:10.green.bold} {human_len:10.magenta.bold} {per_sec:12.cyan.bold} {wide_msg}").expect("Unable to set progress style")
         }
         else {
-            ProgressStyle::with_template("{spinner:.yellow} {bytes:10.green.bold} {total_bytes:10.magenta.bold} {bytes_per_sec:12.cyan.bold} {wide_msg}").unwrap()
+            ProgressStyle::with_template("{spinner:.yellow} {bytes:10.green.bold} {total_bytes:10.magenta.bold} {bytes_per_sec:12.cyan.bold} {wide_msg}").expect("Unable to set progress style")
         }
     );
     progress
@@ -240,14 +238,15 @@ pub fn export_records(records: Vec<Record>, args: &Args) {
                 writer.flush().expect("Unable to flush");
             }
             Format::Json => {
-                let json = serde_json::to_string_pretty(&records).unwrap();
+                let json =
+                    serde_json::to_string_pretty(&records).expect("Unable to serialize records");
                 println!("{}", json);
             }
         }
     } else {
         match args.format {
             Format::Csv => {
-                let file = File::create(&args.output_path).unwrap();
+                let file = File::create(&args.output_path).expect("Unable to serialize records");
                 let mut writer = csv::Writer::from_writer(file);
                 for record in records {
                     writer
@@ -257,10 +256,13 @@ pub fn export_records(records: Vec<Record>, args: &Args) {
                 writer.flush().expect("Unable to flush");
             }
             Format::Json => {
-                let file = File::create(&args.output_path).unwrap();
+                let file = File::create(&args.output_path).expect("Unable to serialize records");
                 let mut writer = std::io::BufWriter::new(file);
-                let json = serde_json::to_string_pretty(&records).unwrap();
-                writer.write_all(json.as_bytes()).unwrap();
+                let json =
+                    serde_json::to_string_pretty(&records).expect("Unable to serialize records");
+                writer
+                    .write_all(json.as_bytes())
+                    .expect("Unable to serialize records");
             }
         }
     };

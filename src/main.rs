@@ -7,17 +7,15 @@ use threadpool::ThreadPool;
 use walkdir::WalkDir;
 //use jwalk::WalkDir;
 use indicatif::ProgressBar;
-use std::path::{Path, PathBuf};
-use std::sync::mpsc::{Receiver, Sender};
+use std::path::PathBuf;
+use std::sync::mpsc::Sender;
 
 mod support;
 use support::*;
 
 fn main() {
     let args = Args::parse();
-    setup_logger(log::LevelFilter::Info, &None).unwrap();
-    // let root = shellexpand::tilde(&args.path).to_string();
-
+    setup_logger(log::LevelFilter::Info, &None).expect("Failed to setup logger.");
     let snapshot = TreeSnapshot::new(&args);
     snapshot.main();
 }
@@ -33,32 +31,25 @@ impl TreeSnapshot {
     fn new(args: &Args) -> Self {
         Self {
             args: args.clone(),
-            progress: make_progress(&args),
+            progress: make_progress(args),
         }
     }
 
     fn main(&self) {
         let worker_count = usize::from(std::thread::available_parallelism().unwrap());
         info!("Number of workers: {}", worker_count);
-
         let pool: ThreadPool = ThreadPool::new(worker_count);
         let (tx, rx) = channel();
-
-        //
         self.walk(&pool, &tx);
-
         drop(tx);
-
         if self.args.verbose {
             self.progress.suspend(|| {
                 info!("Scan finished, waiting for workers to finish computing hashes.");
             });
         }
         let records = rx.iter().collect::<Vec<Record>>();
-
         self.progress.finish_and_clear();
         print_result(&self.args, &records, &self.progress);
-
         export_records(records, &self.args);
     }
 
@@ -107,10 +98,15 @@ impl TreeSnapshot {
             });
             return;
         };
-        tx.send(record).unwrap();
-        let xattr_records = xattr_records(&path);
+        tx.send(record).expect("Failed to send record from thread.");
+        let Ok(xattr_records) = xattr_records(&path) else {
+            self.progress.suspend(|| {
+                error!("Error loading xattr: {} ", path.display());
+            });
+            return;
+        };
         for record in xattr_records {
-            tx.send(record).unwrap();
+            tx.send(record).expect("Failed to send record from thread.");
         }
     }
 }

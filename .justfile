@@ -14,4 +14,4 @@ demo:
 
 lint-fix:
     cargo fmt
-    cargo clippy --fix
+    cargo clippy --fix --allow-dirty
